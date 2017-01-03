@@ -3,7 +3,7 @@ nice R
 logs <- list.files()[grep(".log",list.files())]
 alignmentRates <- cbind(logs,NA)
 for(i in 1:length(logs)){
-log <- read.delim(logs[i],skip=7)
+log <- read.delim(logs[i],head=F)
 cat(nrow(log),"\n") # Make sure every log has 6 lines
 assign(logs[i],log)
 alignmentRates[i,2] <- strsplit(as.character(log[6,])," ")[[1]][1]
@@ -14,3 +14,110 @@ alignmentRates[i,2] <- strsplit(as.character(log[6,])," ")[[1]][1]
 # [2,] "SRR1576363.log" "10.19%" Oct4
 # [3,] "SRR1576404.log" "12.20%" Sox2 (one of several)
 # How much does the alignment improve if I merge the fastq files first?
+# I'm missing the SRP002/SRP002512/ files...
+cd /data/emmabell42/seq/Shuchen
+echo "SRR049932/SRR049932
+SRR049933/SRR049933
+SRR049934/SRR049934
+SRR049935/SRR049935" > toDownload2
+#!/bin/bash
+baseDir="http://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByStudy/sra/SRP/SRP002/SRP002512/"
+while read LINE
+do
+        wget -r wget -r --no-parent $baseDir$LINE.sra
+done < toDownload2
+echo "SRR049932/SRR049932
+SRR049933/SRR049933
+SRR049934/SRR049934
+SRR049935/SRR049935" > toDownload2
+# Moved the directories generated into the previously generated sra directory
+cd /data/emmabell42/seq/Shuchen/sra/ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByStudy
+find /data/emmabell42/seq/Shuchen/sra/ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByStudy/ -name "*.sra" | while read LINE
+do
+        /data/seqtools/sratoolkit.2.4.2-centos_linux64/bin/fastq-dump.2.4.2 $LINE
+done
+for file in *.fastq; do /data/seqtools/FastQC/fastqc $file; done;
+#
+## Get the over-represented sequences from the FastQC html files via R
+#
+nice R
+library(XML)
+library(GenomicRanges)
+library(ShortRead)
+overrepresented <- c()
+htmlFiles <- list.files()[grep(".html",list.files())]
+for(i in 1:length(htmlFiles)){
+tables <- readHTMLTable(htmlFiles[i])
+contents <- unlist(lapply(tables,function(x) "Possible Source" %in% colnames(x)))
+lengthContents <- length(grep(TRUE,contents))
+	if(lengthContents>0) 
+	{ 
+	tmp <- as.character(tables[[grep(TRUE,contents)]][,1])
+	overrepresented <- c(overrepresented,tmp)
+	}
+}
+overrepresented <- overrepresented[!duplicated(overrepresented)]
+names(overrepresented) <- paste0("Overrepresented",1:length(overrepresented))
+overrepresented <- DNAStringSet(overrepresented)
+writeFasta(overrepresented,"overrepresented.fa")
+q()
+n
+#
+## Run Trimmomatic
+#
+for file in *.fastq; 
+do 
+java -jar /data/seqtools/Trimmomatic-0.33/trimmomatic-0.33.jar SE -threads 12 -phred33 $file "`basename "$file" .fastq `.trimmed" ILLUMINACLIP:overrepresented.fa:2:30:10 LEADING:20 TRAILING:20 SLIDINGWINDOW:4:20 MINLEN:20;
+done 
+#
+## Repeat FastQC
+#
+for file in *.trimmed; do /data/seqtools/FastQC/fastqc "$file"; done; 
+for file in *.trimmed_fastqc.zip; do unzip "$file"; done;
+find . -name *summary.txt > ./summaries.txt
+#
+## Read in FastQC HTML files and report any errors
+#
+nice R
+summaries <- read.table("summaries.txt",stringsAsFactors=F)
+summaries <- apply(summaries,1,function(x) substr(x,2,47))
+toName <- c()
+toName <- apply(summaries,1,function(x) substr(x,2,12))
+summaryTable <- c()
+for(i in 1:length(summaries)){
+toRead <- paste0(getwd(),summaries[i])
+summary <- read.table(toRead,sep="\t")
+summaryTable <- rbind(summaryTable,summary)
+}
+summaryTable <- summaryTable[which(!summaryTable[,1]=="PASS"),]
+table(summaryTable[,2])
+#
+## Align with Bowtie2
+#
+export BOWTIE2_INDEXES=/data/seqtools/genomes/hg19/
+find . -name "*.trimmed" | while read filename; 
+do 
+/data/seqtools/bowtie2-2.2.3/bowtie2 -x hg19 -U $filename 1> "`basename "$filename" .trimmed`.sam" 2> "`basename "$filename" .trimmed`.log" -p 8;
+samtools view -bS "`basename "$filename" .trimmed`.sam" > "`basename "$filename" .trimmed`.bam";
+done
+#> alignmentRates - fine.
+#     logs
+#[1,] "SRR049932.log" "81.54%"
+#[2,] "SRR049933.log" "74.26%"
+#[3,] "SRR049934.log" "76.40%"
+#[4,] "SRR049935.log" "72.35%"
+#
+## Peak calling with MACS2
+#
+inputs <- cbind(name=c("GSE21916_hESC_Oct4","GSE69479_hESC_Sox2","GSE69479_hNPC_Sox2","GSE69479_hNPC_Sox2"),ip=c("SRR049933.bam SRR049934.bam SRR049935.bam","SRR2049332.bam","SRR945976.bam","SRR2049336.bam"),input=c("SRR049932.bam","SRR2049334.bam SRR2049335.bam","SRR945975.bam","SRR2049338.bam"))
+write.table(inputs,"inputs.txt",sep=",",quote=F,col.names=F,row.names=F)
+q()
+n
+cd ./bam
+while read LINE;
+do
+name=`echo $LINE | cut -f 1 -d ","`
+treatment=`echo $LINE | cut -f 2 -d ","`
+control=`echo $LINE | cut -f 3 -d ","`
+macs2 callpeak -t $treatment -c $control -n $name -f BAM -g hs -B; 
+done < inputs.txt
