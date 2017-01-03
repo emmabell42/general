@@ -1,0 +1,16 @@
+# Check the alignment scores of the trimmed fastq files
+nice R
+logs <- list.files()[grep(".log",list.files())]
+alignmentRates <- cbind(logs,NA)
+for(i in 1:length(logs)){
+log <- read.delim(logs[i],skip=7)
+cat(nrow(log),"\n") # Make sure every log has 6 lines
+assign(logs[i],log)
+alignmentRates[i,2] <- strsplit(as.character(log[6,])," ")[[1]][1]
+}
+#> alignmentRates
+#      logs
+# [1,] "SRR1576362.log" "11.52%" Oct4
+# [2,] "SRR1576363.log" "10.19%" Oct4
+# [3,] "SRR1576404.log" "12.20%" Sox2 (one of several)
+# How much does the alignment improve if I merge the fastq files first?
