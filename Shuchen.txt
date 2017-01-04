@@ -109,7 +109,7 @@ done
 #
 ## Peak calling with MACS2
 #
-inputs <- cbind(name=c("GSE21916_hESC_Oct4","GSE69479_hESC_Sox2","GSE69479_hNPC_Sox2","GSE69479_hNPC_Sox2"),ip=c("SRR049933.bam SRR049934.bam SRR049935.bam","SRR2049332.bam","SRR945976.bam","SRR2049336.bam"),input=c("SRR049932.bam","SRR2049334.bam SRR2049335.bam","SRR945975.bam","SRR2049338.bam"))
+inputs <- cbind(name=c("GSE21916_hESC_Oct4","GSE69479_hESC_Sox2","GSE49404_hNPC_Sox2","GSE69479_hNPC_Sox2"),ip=c("SRR049933.bam SRR049934.bam SRR049935.bam","SRR2049332.bam","SRR945976.bam","SRR2049336.bam"),input=c("SRR049932.bam","SRR2049334.bam SRR2049335.bam","SRR945975.bam","SRR2049338.bam"))
 write.table(inputs,"inputs.txt",sep=",",quote=F,col.names=F,row.names=F)
 q()
 n
@@ -121,3 +121,7 @@ treatment=`echo $LINE | cut -f 2 -d ","`
 control=`echo $LINE | cut -f 3 -d ","`
 macs2 callpeak -t $treatment -c $control -n $name -f BAM -g hs -B; 
 done < inputs.txt
+for FILE in *.r
+do
+Rscript $FILE
+done
