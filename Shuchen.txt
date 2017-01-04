@@ -125,3 +125,43 @@ for FILE in *.r
 do
 Rscript $FILE
 done
+nice R
+peaks <- list.files()[grep("narrowPeak",list.files())]
+for(i in 1:length(peaks)){
+reading <- read.table(peaks[i],stringsAsFactors=F)
+assign(peaks[i],reading)
+cat(peaks[i],nrow(reading),"\n")
+}
+q()
+n
+macs2 callpeak -t SRR945976.bam -c SRR945975.bam -n GSE49404_hNPC_Sox2_nomodel -f BAM -g hs -B --nomodel --extsize 250 
+#
+## Assigning peaks to genomic regions
+#
+cd /data/emmabell42/seq/Shuchen/bam/
+PATH=$PATH:/data/seqtools/homer/bin/ 
+find . -name '*.narrowPeak' | while read FILE 
+do
+annotatePeaks.pl $FILE hg19 > "`basename "$FILE" .narrowPeak `_annotation.txt"
+done
+#
+nice R
+annotations <- list.files()[grep("_annotation.txt",list.files())]
+for(i in 1:length(annotations)){
+reading <- read.table(annotations[i],head=T,sep="\t",comment.char="",quote="",stringsAsFactors=F)
+reading$Annotation[grep("intron",reading$Annotation)] <- "intron"
+reading$Annotation[grep("promoter-TSS",reading$Annotation)] <- "promoter-TSS"
+reading$Annotation[grep("exon",reading$Annotation)] <- "exon"
+reading$Annotation[grep("non-coding",reading$Annotation)] <- "non-coding"
+reading$Annotation[grep("TTS",reading$Annotation)] <- "TTS"
+cat(annotations[i],"\n",table(reading$Annotation),"\n")
+assign(annotations[i],reading)
+}
+#
+## Intersect narrowPeak files with hg19 chromosome sizes
+#
+find . -name '*.narrowPeak' | while read FILE
+do
+bedtools intersect -a $FILE \
+                   -b /data/emmabell42/resources/hg19.chrom.sizes.txt > "`basename "$FILE" .narrowPeak `_narrowPeak.trimmed"
+done
