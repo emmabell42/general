@@ -1,0 +1,13 @@
+mkdir /data/emmabell42/seq/Shuchen/MotifEnrichment
+cd /data/emmabell42/seq/Shuchen/MACS2
+PATH=$PATH:/data/seqtools/homer/bin/
+PATH=$PATH:/data/seqtools/weblogo/
+PATH=$PATH:/data/seqtools/samtools-1.1/
+
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE69479_hESC_Sox2_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE69479_hESC_Sox2vsBG -preparsedDir /data/emmabell42/resources/HOMER -p 12
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE49404_hNPC_Sox2_nomodel_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE49404_hNPC_Sox2_nomodelvsBG -preparsedDir /data/emmabell42/resources/HOMER -p 12
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE69479_hNPC_Sox2_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE69479_hNPC_Sox2vsBG -preparsedDir /data/emmabell42/resources/HOMER -p 12
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE69479_hESC_Sox2_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE69479_hESC_Sox2vsGSE49404_hNPC_Sox2_nomodel -bg GSE49404_hNPC_Sox2_nomodel_peaks_narrowPeak.trimmed -p 12
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE69479_hESC_Sox2_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE69479_hESC_Sox2vsGSE69479_hNPC_Sox2 -bg GSE69479_hNPC_Sox2_peaks_narrowPeak.trimmed -p 12
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE49404_hNPC_Sox2_nomodel_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE49404_hNPC_Sox2_nomodelvsGSE69479_hESC_Sox2 -bg GSE69479_hESC_Sox2_peaks_narrowPeak.trimmed -p 12
+/data/seqtools/homer/bin/findMotifsGenome.pl GSE69479_hNPC_Sox2_peaks_narrowPeak.trimmed /data/seqtools/genomes/hg19 /data/emmabell42/seq/Shuchen/MotifEnrichment/GSE69479_hNPC_Sox2vsGSE69479_hESC_Sox2 -bg GSE69479_hESC_Sox2_peaks_narrowPeak.trimmed -p 12
