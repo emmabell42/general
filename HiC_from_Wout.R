@@ -1,0 +1,21 @@
+setwd("\\\\store.ic.ac.uk\\IC\\fom\\surgeryandcancer\\epigenetics-and-development\\Current lab members\\Emma Bell\\Data\\Collaborators\\Onkar Joshi")
+cum <- read.table("Promoter_SE_interactions_Serum_and_2i_Cumulative.tab",sep="\t",head=T,comment.char="",quote="",stringsAsFactors=F)
+subregs <- read.table("\\\\store.ic.ac.uk\\IC\\fom\\surgeryandcancer\\epigenetics-and-development\\Current lab members\\Emma Bell\\Data\\Analysis\\Super Enhancers\\Super Enhancelets\\SuperEnhancer_subregion_methstatus.txt",sep="\t",head=T,comment.char="",quote="",stringsAsFactors=F)
+subregs <- subregs[which(!duplicated(subregs[,2])),]
+cumSubregs <- merge(subregs,cum,by.x="SE_start",by.y="se_start")
+cumSubregs <- cbind(cumSubregs,logFC=log2(cumSubregs$score_FCS/cumSubregs$score_2i))
+boxplot(cumSubregs$logFC~cumSubregs$SE.type,ylab="Log2(FC)",main="Score in serum vs 2i")
+setwd("\\\\store.ic.ac.uk\\IC\\fom\\surgeryandcancer\\epigenetics-and-development\\Current lab members\\Emma Bell\\Data\\Analysis\\Super Enhancers\\SE locations")
+toRead <- c("Hypermethylated","Hypomethylated","Methylated")
+for(i in 1:length(toRead)){
+fileName <- paste0(toRead[i],".txt")
+tmp <- read.table(fileName,sep="\t",head=F,comment.char="",quote="",stringsAsFactors=F)
+tmp <- cbind(tmp,toRead[i])
+assign(toRead[i],tmp)
+}
+allSubregs <- rbind(Hypomethylated,Hypermethylated,Methylated[,c(1:3,5)])
+setwd("\\\\store.ic.ac.uk\\IC\\fom\\surgeryandcancer\\epigenetics-and-development\\Current lab members\\Emma Bell\\Data\\Collaborators\\Onkar Joshi")
+int <- read.table("Promoter_SE_interactions_Serum_and_2i.tab",sep="\t",head=T,comment.char="",quote="",stringsAsFactors=F)
+library(GenomicRanges)
+int.ranges <- with(int,GRanges(se_chr,IRanges(start=oe_start,end=oe_end)))
+subsetOverlaps()
