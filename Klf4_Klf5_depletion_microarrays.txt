@@ -1,0 +1,11 @@
+echo "ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM651nnn/GSM651954/suppl/GSM651954.txt.gz
+ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM651nnn/GSM651955/suppl/GSM651955.txt.gz
+ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM137nnn/GSM137893/suppl/GSM137893.txt.gz
+ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM137nnn/GSM137894/suppl/GSM137894.txt.gz
+ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM652nnn/GSM652029/suppl/GSM652029.txt.gz
+ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM652nnn/GSM652030/suppl/GSM652030.txt.gz" > toDownload
+
+while read LINE
+do
+wget $LINE
+done < toDownload
