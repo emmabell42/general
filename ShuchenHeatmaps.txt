@@ -2,8 +2,8 @@
 ## Make tag directories
 #
 nice R
-inputs <- cbind(name=c("GSE21916_hESC_Oct4","GSE69479_hESC_Sox2","GSE49404_hNPC_Sox2","GSE69479_hNPC_Sox2"),ip=c("SRR049933.bam SRR049934.bam SRR049935.bam","SRR2049332.bam","SRR945976.bam","SRR2049336.bam"),input=c("SRR049932.bam","SRR2049334.bam SRR2049335.bam","SRR945975.bam","SRR2049338.bam"))
-inputs <- rbind(
+inputs1 <- cbind(name=c("GSE21916_hESC_Oct4","GSE69479_hESC_Sox2","GSE49404_hNPC_Sox2","GSE69479_hNPC_Sox2"),ip=c("SRR049933.bam SRR049934.bam SRR049935.bam","SRR2049332.bam","SRR945976.bam","SRR2049336.bam"),input=c("SRR049932.bam","SRR2049334.bam SRR2049335.bam","SRR945975.bam","SRR2049338.bam"))
+inputs2 <- rbind(
 c("GSE32465_hESC_Oct4_nomodel","SRR351704 SRR351705","SRR351565"), 
 c("GSE69646_hESC_Oct4","SRR2056023 SRR2056024","SRR2056020"),
 c("GSE69646_hESC_H3K27ac","SRR2056016 SRR2056017","SRR2056020"),
@@ -24,15 +24,22 @@ c("GSE24447_hNPC_H3K27me3","SRR067380","SRR067379"),
 c("GSE24447_hNPC_H3K4me1","SRR067382","SRR067379"),
 c("GSE24447_hNPC_H3K4me3","SRR067383","SRR067379")
 )
+inputs2[,2] <- paste0(inputs2[,2],".bam")
+inputs2[,3] <- paste0(inputs2[,3],".bam")
+inputs2[,2] <- gsub(" ",".bam ",inputs2[,2])
+inputs <- rbind(inputs1,inputs2)
+remove <- inputs[grep("_nomodel",inputs[,1]),1]
 inputs <- inputs[which(!inputs[,1] %in% remove),]
 write.table(inputs,"bamFiles.txt",sep=",",row.names=F,col.names=F,quote=F)
 q()
 n
 mkdir tagdir
+cd bam
+PATH=$PATH:/data/seqtools/homer/bin/ 
 while read LINE
 do
 name=`echo $LINE | cut -f 1 -d ","`
 alignmentfiles=`echo $LINE | cut -f 2 -d ","`
-makeTagDirectory ./tagdir/$name [options] ./bam/$alignmentfiles.bam
-done < bamFiles.txt
-
+makeTagDirectory ../tagdir/$name $alignmentfiles
+done < ../bamFiles.txt
+makeTagDirectory ./tagdir/Pax6 ./Pax6_chip_dataset/Pax6.NEC.unique.bed/chn021.unique.trimmed.bed
