@@ -389,3 +389,9 @@ dev.off()
 png("hnpcEnhancers_high_venn.png")
 vennDiagram(hnpcEnhancers.high)
 dev.off()
+#
+## Processing Pax6 reads bed files
+#
+ cut -d' ' -f1-5 chn015.unique.bed > chn015.unique.trimmed.bed
+ cut -d' ' -f1-5 chn021.unique.bed > chn021.unique.trimmed.bed
+macs2 callpeak -t Pax6.NEC.unique.bed/chn021.unique.trimmed.bed -c Input.NEC.unique.bed/chn015.unique.trimmed.bed -f BED -g hs -n 20160124_Pax6 -B --nomodel --extsize 147
