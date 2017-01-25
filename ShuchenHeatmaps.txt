@@ -43,3 +43,8 @@ alignmentfiles=`echo $LINE | cut -f 2 -d ","`
 makeTagDirectory ../tagdir/$name $alignmentfiles
 done < ../bamFiles.txt
 makeTagDirectory ./tagdir/Pax6 ./Pax6_chip_dataset/Pax6.NEC.unique.bed/chn021.unique.trimmed.bed
+#
+## Heatmaps!
+#
+mkdir coverage
+annotatePeaks.pl ./MACS2/GSE24447_hESC_H3K4me1_peaks.narrowPeak hg19 -size 4000 -hist 25 -ghist -d ./tagdir/GSE21916_hESC_Oct4/ ./tagdir/GSE69479_hESC_Sox2  > ./coverage/hESC_Oct4_Sox2
