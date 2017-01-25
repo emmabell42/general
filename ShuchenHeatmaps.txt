@@ -47,4 +47,7 @@ makeTagDirectory ./tagdir/Pax6 ./Pax6_chip_dataset/Pax6.NEC.unique.bed/chn021.un
 ## Heatmaps!
 #
 mkdir coverage
-annotatePeaks.pl ./MACS2/GSE24447_hESC_H3K4me1_peaks.narrowPeak hg19 -size 4000 -hist 25 -ghist -d ./tagdir/GSE21916_hESC_Oct4/ ./tagdir/GSE69479_hESC_Sox2  > ./coverage/hESC_Oct4_Sox2
+annotatePeaks.pl ../MACS2/GSE24447_hESC_H3K4me1_peaks.narrowPeak hg19 -size 4000 -hist 25 -ghist -d GSE21916_hESC_Oct4/ GSE24447_hESC_H3K27ac/ GSE24447_hESC_H3K27me3/ GSE24447_hESC_H3K4me1/ GSE24447_hESC_H3K4me3/ GSE24447_hNPC_H3K27ac/ GSE24447_hNPC_H3K27me3/ GSE24447_hNPC_H3K4me1/ GSE24447_hNPC_H3K4me3/ GSE49404_hNPC_Sox2/ GSE62193_hESC_H3K27ac/ GSE62193_hESC_H3K4me3/ GSE62193_hNPC_H3K27ac/ GSE62193_hNPC_H3K4me3/ GSE69479_hESC_Sox2/ GSE69479_hNPC_Sox2/ GSE69646_hESC_H3K27ac/ GSE69646_hESC_Oct4/ Pax6/  > ../coverage/20170125_H3K4me1
+#
+nice R
+cov <- read.table("20170125_H3K4me1",sep="\t",head=T,row.names=1,comment.char="",quote="",stringsAsFactors=F)
