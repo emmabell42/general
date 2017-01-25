@@ -269,8 +269,8 @@ print(tmp[6,])
 #
 nice R
 inputs <- rbind(
-c("GSE32465_hESC_Oct4_nomodel","SRR351704 SRR351705","SRR351565"), 
-c("GSE69646_hESC_Oct4","SRR2056023 SRR2056024","SRR2056020"),
+#c("GSE32465_hESC_Oct4_nomodel","SRR351704 SRR351705","SRR351565"), 
+#c("GSE69646_hESC_Oct4","SRR2056023 SRR2056024","SRR2056020"),
 c("GSE69646_hESC_H3K27ac","SRR2056016 SRR2056017","SRR2056020"),
 c("GSE62193_hESC_H3K27ac","SRR1608982 SRR1608987","SRR1608986"),
 c("GSE62193_hESC_H3K27me3_nomodel","SRR1608983 SRR1608988","SRR1608986"),
@@ -289,7 +289,9 @@ c("GSE24447_hNPC_H3K27me3","SRR067380","SRR067379"),
 c("GSE24447_hNPC_H3K4me1","SRR067382","SRR067379"),
 c("GSE24447_hNPC_H3K4me3","SRR067383","SRR067379")
 )
-colnames(inputs) <- c("Name","IP","Input")
+inputs <- cbind(inputs,"--broad","")
+inputs[grep("nomodel",inputs[,1]),5] <- "--nomodel --extsize 225"
+colnames(inputs) <- c("Name","IP","Input","Broad","Model")
 inputs[,2] <- paste0(inputs[,2],".bam")
 inputs[,3] <- paste0(inputs[,3],".bam")
 inputs[,2] <- gsub(" ",".bam ",inputs[,2])
@@ -301,8 +303,10 @@ do
 name=`echo $LINE | cut -f 1 -d ","`
 treatment=`echo $LINE | cut -f 2 -d ","`
 control=`echo $LINE | cut -f 3 -d ","`
-macs2 callpeak -t $treatment -c $control -n $name -f BAM -g hs -B --nomodel --extsize 225
-done < inputs.txt
+broad=`echo $LINE | cut -f 4 -d ","`
+model=`echo $LINE | cut -f 5 -d ","`
+macs2 callpeak -t $treatment -c $control -n $name -f BAM $broad -g hs -B $model
+done < ../inputs.txt
 
 for FILE in *.r
 do
@@ -332,12 +336,28 @@ assign(peaks[i],tmp)
 #
 nice R
 library(GenomicRanges)
-annotFiles <- list.files(recursive=T)[grep("annotation.txt",list.files(recursive=T))]
-annotFilesName <- gsub("_peaks_annotation.txt","",annotFiles)
-annotFilesName <- gsub("_annotation.txt","",annotFilesName)
-annotFilesName <- gsub("MACS2/","",annotFilesName)
-annotFilesRanges <- paste0(annotFilesName,".gr")
-annotFilesPath <- paste0(getwd(),"/",annotFiles)
+path <- paste0(getwd(),"/",list.files(recursive=T)[grep("annotation.txt",list.files(recursive=T))])
+toName <- gsub("_annotation.txt","",toRead)
+toName <- gsub("seq/Shuchen/MACS2/","",toName)
+toName <- gsub("seq/Shuchen/","",toName)
+for(i in 1:length(path)){
+reading <- read.table(path[i],sep="\t",head=T,comment.char="",quote="",stringsAsFactors=F)
+reading.gr <- with(reading,GRanges(reading[,2],IRanges(reading[,3],reading[,4])))
+assign(toName[i],reading)
+assign(paste0(toName[i],".gr"),reading.gr)
+}
+toSubset <- c("GSE24447_hESC_H3K27me3_peaks.gr","GSE24447_hESC_H3K4me1_peaks.gr","GSE24447_hESC_H3K4me3_peaks.gr")
+for(i in 1:3){
+subsetting <- subsetByOverlaps(get(toSubset[i]),GSE24447_hESC_H3K27ac_peaks.gr)
+assign(gsub(".gr",".ss",toSubset[i]),subsetting)
+}
+library(ChIPpeakAnno)
+library(limma)
+res <- makeVennDiagram(Peaks=list(GSE24447_hESC_H3K27me3_peaks.ss,GSE24447_hESC_H3K4me1_peaks.ss,GSE24447_hESC_H3K4me3_peaks.ss),NameOfPeaks=c("H3K27me3", "H3K4me1","H3K4me3"))
+png("ESC_histonemods.png")
+vennDiagram(res[[2]])
+dev.off()
+
 #Define enhancers
 hescEnhancers <- array(NA,dim=c(length(GSE24447_hESC_H3K4me1.gr),3))
 hnpcEnhancers <- array(NA,dim=c(length(GSE24447_hNPC_H3K4me1.gr),3))
