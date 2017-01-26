@@ -140,9 +140,9 @@ macs2 callpeak -t SRR945976.bam -c SRR945975.bam -n GSE49404_hNPC_Sox2_nomodel -
 #
 cd /data/emmabell42/seq/Shuchen/bam/
 PATH=$PATH:/data/seqtools/homer/bin/ 
-find . -name '*.narrowPeak' | while read FILE 
+find . -name '*.broadPeak' | while read FILE 
 do
-annotatePeaks.pl $FILE hg19 > "`basename "$FILE" .narrowPeak `_annotation.txt"
+annotatePeaks.pl $FILE hg19 > "`basename "$FILE" .broadPeak `_annotation.txt"
 done
 #
 nice R
@@ -289,6 +289,13 @@ c("GSE24447_hNPC_H3K27me3","SRR067380","SRR067379"),
 c("GSE24447_hNPC_H3K4me1","SRR067382","SRR067379"),
 c("GSE24447_hNPC_H3K4me3","SRR067383","SRR067379")
 )
+
+inputs <- rbind(
+c("GSE62193_hESC_H3K27me3","SRR1608983 SRR1608988","SRR1608986"),
+c("GSE62193_hESC_H3K4me1","SRR1608984 SRR1608989","SRR1608986"),
+c("GSE62193_hNPC_H3K27me3","SRR1608992 SRR1608997","SRR1608995"),
+c("GSE62193_hNPC_H3K4me1","SRR1608993 SRR1608998","SRR1608995"))
+
 inputs <- cbind(inputs,"--broad","")
 inputs[grep("nomodel",inputs[,1]),5] <- "--nomodel --extsize 225"
 colnames(inputs) <- c("Name","IP","Input","Broad","Model")
@@ -306,14 +313,14 @@ control=`echo $LINE | cut -f 3 -d ","`
 broad=`echo $LINE | cut -f 4 -d ","`
 model=`echo $LINE | cut -f 5 -d ","`
 macs2 callpeak -t $treatment -c $control -n $name -f BAM $broad -g hs -B $model
-done < ../inputs.txt
+done < inputs.txt
 
 for FILE in *.r
 do
 Rscript $FILE
 done
 nice R
-peaks <- list.files()[grep("narrowPeak",list.files())]
+peaks <- list.files()[grep("broadPeak",list.files())]
 for(i in 1:length(peaks)){
 reading <- read.table(peaks[i],stringsAsFactors=F)
 assign(peaks[i],reading)
@@ -337,12 +344,18 @@ assign(peaks[i],tmp)
 nice R
 library(GenomicRanges)
 path <- paste0(getwd(),"/",list.files(recursive=T)[grep("annotation.txt",list.files(recursive=T))])
-toName <- gsub("_annotation.txt","",toRead)
-toName <- gsub("seq/Shuchen/MACS2/","",toName)
-toName <- gsub("seq/Shuchen/","",toName)
+toName <- gsub("_annotation.txt","",list.files(recursive=T)[grep("annotation.txt",list.files(recursive=T))])
+toName <- gsub("MACS2/","",toName)
 for(i in 1:length(path)){
 reading <- read.table(path[i],sep="\t",head=T,comment.char="",quote="",stringsAsFactors=F)
+reading$Annotation[grep("intron",reading$Annotation)] <- "intron"
+reading$Annotation[grep("promoter-TSS",reading$Annotation)] <- "promoter-TSS"
+reading$Annotation[grep("exon",reading$Annotation)] <- "exon"
+reading$Annotation[grep("non-coding",reading$Annotation)] <- "non-coding"
+reading$Annotation[grep("TTS",reading$Annotation)] <- "TTS"
+cat(toName[i]," ",table(reading$Annotation),"\n")
 reading.gr <- with(reading,GRanges(reading[,2],IRanges(reading[,3],reading[,4])))
+mcols(reading.gr,use.names=T) <- cbind(reading[,1],reading[,8],reading[,16])
 assign(toName[i],reading)
 assign(paste0(toName[i],".gr"),reading.gr)
 }
@@ -359,16 +372,32 @@ vennDiagram(res[[2]])
 dev.off()
 
 #Define enhancers
-hescEnhancers <- array(NA,dim=c(length(GSE24447_hESC_H3K4me1.gr),3))
-hnpcEnhancers <- array(NA,dim=c(length(GSE24447_hNPC_H3K4me1.gr),3))
-colnames(hescEnhancers) <- c("Sox2","Oct4","H3K27ac")
-colnames(hnpcEnhancers) <- c("Sox2","Pax6","H3K27ac")
-hescs <- c("GSE69479_hESC_Sox2.gr.wide","GSE69646_hESC_Oct4.gr.wide","GSE24447_hESC_H3K27ac.gr.wide")
-hnpcs <- c("GSE49404_hNPC_Sox2_nomodel.gr.wide","Pax6.homer.gr.wide","GSE24447_hNPC_H3K27ac.gr.wide")
-for(i in 1:3){
-hescEnhancers[,i] <- countOverlaps(GSE24447_hESC_H3K4me1.gr.wide,get(hescs[i]))
-hnpcEnhancers[,i] <- countOverlaps(GSE24447_hNPC_H3K4me1.gr.wide,get(hnpcs[i]))
+gr.obs <- ls()[grep(".gr",ls())]
+gr.obs <- gr.obs[c(2:9,26:27,29,30)]
+h3k27ac_hesc <- array(NA,dim=c(length(GSE24447_hESC_H3K27ac_peaks.gr),length(gr.obs)))
+colnames(h3k27ac_hesc) <- gr.obs
+h3k27ac_hnpc <- array(NA,dim=c(length(GSE24447_hNPC_H3K27ac_peaks.gr),length(gr.obs)))
+colnames(h3k27ac_hnpc) <- gr.obs
+for(i in 1:length(gr.obs)){
+h3k27ac_hesc[,i] <- countOverlaps(GSE24447_hESC_H3K27ac_peaks.gr,get(gr.obs[i]))
+h3k27ac_hesc[which(h3k27ac_hesc[,i]>1),i] <- 1
+h3k27ac_hnpc[,i] <- countOverlaps(GSE24447_hNPC_H3K27ac_peaks.gr,get(gr.obs[i]))
+h3k27ac_hnpc[which(h3k27ac_hnpc[,i]>1),i] <- 1
 }
+h3k27ac_hesc <- h3k27ac_hesc[,2:12]
+h3k27ac_hnpc <- h3k27ac_hnpc[,c(1:4,6:12)]
+cm.hesc <- cor(h3k27ac_hesc)
+cm.hnpc <- cor(h3k27ac_hnpc)
+dendro.hesc <- hclust(as.dist(1-cm.hesc))
+dendro.hnpc <- hclust(as.dist(1-cm.hnpc))
+library(gplots)
+png("hesc_corr_heatmap.png")
+heatmap.2(as.matrix(cm.hesc),trace="none",col=bluered(100),symkey=T,Rowv=as.dendrogram(dendro.hesc),Colv=as.dendrogram(dendro.hesc))
+dev.off()
+hescEnhancers <- which(h3k27ac_hesc[,2]==1 & h3k27ac_hesc[,1]==0 & h3k27ac_hesc[,3]==0)
+hnpcEnhancers <- which(h3k27ac_hnpc[,2]==1 & h3k27ac_hnpc[,1]==0 & h3k27ac_hnpc[,3]==0)
+write.table(GSE24447_hESC_H3K27ac_peaks[hescEnhancers,2:4],"hESC_enhancers.bed",sep="\t",quote=F,row.names=F,col.names=F)
+write.table(GSE24447_hNPC_H3K27ac_peaks[hnpcEnhancers,2:4],"hNPC_enhancers.bed",sep="\t",quote=F,row.names=F,col.names=F)
 library(limma)
 png("hescEnhancers_wide_venn.png")
 vennDiagram(hescEnhancers)
