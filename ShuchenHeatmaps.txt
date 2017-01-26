@@ -48,6 +48,16 @@ makeTagDirectory ./tagdir/Pax6 ./Pax6_chip_dataset/Pax6.NEC.unique.bed/chn021.un
 #
 mkdir coverage
 annotatePeaks.pl ../MACS2/GSE24447_hESC_H3K4me1_peaks.narrowPeak hg19 -size 4000 -hist 25 -ghist -d GSE21916_hESC_Oct4/ GSE24447_hESC_H3K27ac/ GSE24447_hESC_H3K27me3/ GSE24447_hESC_H3K4me1/ GSE24447_hESC_H3K4me3/ GSE24447_hNPC_H3K27ac/ GSE24447_hNPC_H3K27me3/ GSE24447_hNPC_H3K4me1/ GSE24447_hNPC_H3K4me3/ GSE49404_hNPC_Sox2/ GSE62193_hESC_H3K27ac/ GSE62193_hESC_H3K4me3/ GSE62193_hNPC_H3K27ac/ GSE62193_hNPC_H3K4me3/ GSE69479_hESC_Sox2/ GSE69479_hNPC_Sox2/ GSE69646_hESC_H3K27ac/ GSE69646_hESC_Oct4/ Pax6/  > ../coverage/20170125_H3K4me1
+cd tagDir
+annotatePeaks.pl ../hESC_enhancers.bed hg19 -size 4000 -hist 25 -ghist -d GSE21916_hESC_Oct4/ GSE24447_hESC_H3K27ac/ GSE24447_hESC_H3K27me3/ GSE24447_hESC_H3K4me1/ GSE24447_hESC_H3K4me3/ GSE24447_hNPC_H3K27ac/ GSE24447_hNPC_H3K27me3/ GSE24447_hNPC_H3K4me1/ GSE24447_hNPC_H3K4me3/ GSE49404_hNPC_Sox2/ GSE62193_hESC_H3K27ac/ GSE62193_hESC_H3K4me3/ GSE62193_hNPC_H3K27ac/ GSE62193_hNPC_H3K4me3/ GSE69479_hESC_Sox2/ GSE69479_hNPC_Sox2/ GSE69646_hESC_H3K27ac/ GSE69646_hESC_Oct4/ Pax6/  > ../coverage/20170126_hESC_enhancers
+
 #
 nice R
-cov <- read.table("20170125_H3K4me1",sep="\t",head=T,row.names=1,comment.char="",quote="",stringsAsFactors=F)
+cov <- read.table("20170126_hESC_enhancers",sep="\t",head=T,row.names=1)
+tags <- list.files("../tagdir")[1:19]
+h3k27acDensity <- rowSums(cov[,162:323])
+cov.order <- cov[order(h3k27acDensity,decreasing=T),]
+library(gplots)
+png("GSE24447_hESC_H3K27ac_ordered.png")
+heatmap.2(as.matrix(cov.order[,162:323]),trace="none",Colv=NULL,Rowv=NULL,dendrogram=NULL)
+dev.off()
