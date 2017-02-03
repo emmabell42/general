@@ -42,3 +42,33 @@ h3k27ac[which(h3k27ac[,i]>1),i] <- 1
 enhancers <- which(h3k27ac[,1]==0 & h3k27ac[,2]==1 & h3k27ac[,3]==0)
 h3k27ac.enhancers <- GSE24447_hESC_H3K27ac_peaks.gr[enhancers] #23507
 table(mcols(h3k27ac.enhancers[]))
+#
+## How many enhancers overlap with Sox2 and Oct4?
+#
+res <- makeVennDiagram(Peaks=list(h3k27ac.enhancers,GSE69479_hESC_Sox2_peaks.gr,GSE69646_hESC_Oct4_peaks.gr),NameOfPeaks=c("Enhancers","Sox2","Oct4"))
+library(limma)
+png("hESC_enhancers_Sox2_Oct4_venn.png")
+vennDiagram(res[[2]])
+dev.off()
+
+extend <- function(x, upstream=0, downstream=0)     
+{
+    if (any(strand(x) == "*"))
+        warning("'*' ranges were treated as '+'")
+    on_plus <- strand(x) == "+" | strand(x) == "*"
+    new_start <- start(x) - ifelse(on_plus, upstream, downstream)
+    new_end <- end(x) + ifelse(on_plus, downstream, upstream)
+    ranges(x) <- IRanges(new_start, new_end)
+    trim(x)
+}
+
+toExtend <- c("GSE69479_hESC_Sox2_peaks.gr","GSE69646_hESC_Oct4_peaks.gr")
+for(i in 1:length(extend)){
+gr <- get(toExtend[i])
+extended.gr <- extend(gr,100,100)
+assign(paste0(toExtend[i],".wide"),extended.gr)
+}
+res <- makeVennDiagram(Peaks=list(h3k27ac.enhancers,GSE69479_hESC_Sox2_peaks.gr.wide,GSE69646_hESC_Oct4_peaks.gr.wide),NameOfPeaks=c("Enhancers","Sox2","Oct4"))
+png("hESC_enhancers_Sox2_Oct4_wide_venn.png")
+vennDiagram(res[[2]])
+dev.off()
