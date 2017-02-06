@@ -53,10 +53,20 @@ annotatePeaks.pl ../hESC_enhancers.bed hg19 -size 4000 -hist 25 -ghist -d GSE219
 
 #
 nice R
+setwd("/data/emmabell42/seq/Shuchen/coverage")
 cov <- read.table("20170126_hESC_enhancers",sep="\t",head=T,row.names=1)
 tags <- list.files("../tagdir")[1:19]
-h3k27acDensity <- rowSums(cov[,162:323])
-cov.order <- cov[order(h3k27acDensity,decreasing=T),]
+ncol(cov)/161 #19
+aveCov <- array(NA,dim=c(nrow(cov),19))
+for(i in 1:nrow(aveCov)){
+  for(j in 1:ncol(aveCov)){
+  aveCov[i,j] <- mean()
+  }
+}
+
+  1:161
+162:323
+
 library(gplots)
 png("GSE24447_hESC_H3K27ac_ordered.png")
 heatmap.2(as.matrix(cov.order[,162:323]),trace="none",Colv=NULL,Rowv=NULL,dendrogram=NULL)
