@@ -72,3 +72,8 @@ res <- makeVennDiagram(Peaks=list(h3k27ac.enhancers,GSE69479_hESC_Sox2_peaks.gr.
 png("hESC_enhancers_Sox2_Oct4_wide_venn.png")
 vennDiagram(res[[2]])
 dev.off()
+
+#
+## Heatmap of average coverage ranked by H3K27ac
+#
+coverage <- read.table()
