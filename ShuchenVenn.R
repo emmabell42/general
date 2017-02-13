@@ -73,7 +73,41 @@ png("hESC_enhancers_Sox2_Oct4_wide_venn.png")
 vennDiagram(res[[2]])
 dev.off()
 
-#
-## Heatmap of average coverage ranked by H3K27ac
-#
-coverage <- read.table()
+nice R
+setwd("/data/emmabell42/seq/Shuchen/coverage")
+hesc.cov <- read.table("20170126_hESC_enhancers",sep="\t",head=T,row.names=1)
+hnpc.cov <- read.table("20170126_hNPC_enhancers",sep="\t",head=T,row.names=1)
+tags <- list.files("../tagdir")[1:19]
+ncol(cov)/161 #19
+covList <- as.list(rep(NA,19))
+
+
+aveCov <- list(array(NA,dim=c(nrow(hesc.cov),19)),array(NA,dim=c(nrow(hnpc.cov),19)))
+toCalc <- c("hesc.cov","hnpc.cov")
+colnames(aveCov[[1]]) <- tags
+colnames(aveCov[[2]]) <- tags
+for(i in 1:length(aveCov)){
+cov <- get(toCalc[i])
+	for(j in 1:nrow(cov)){
+	cat(i,"Calculating means for row",j,"\n",sep=" ")
+	  for(k in 1:ncol(aveCov[[i]])){
+		#cat("Calculating mean of",tags[k],"\n",sep=" ")
+		lastCol <- k*161
+		firstCol <- lastCol-160
+		aveCov[[i]][j,k] <- mean(as.numeric(cov[j,firstCol:lastCol]))
+		}
+	}
+}
+
+library(gplots)
+cm <- as.list(rep(NA,2))
+dendro <- as.list(rep(NA,2))
+for(i in 1:(length(cm))){
+cm[[i]] <- cor(aveCov[[i]],use="pairwise.complete.obs")
+dendro[[i]] <- hclust(as.dist(1-cm[[i]]))
+}
+
+dendro <- hclust(as.dist(1-cm))
+png("hESC_enhancers.png")
+heatmap.2(,Rowv=as.dendrogram(dendro),Colv=as.dendrogram(dendro),trace="none",col=bluered(100),mar=c(15,15))
+dev.off()
