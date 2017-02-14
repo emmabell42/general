@@ -1,6 +1,9 @@
 #
 ## Overlapping peaks
 #
+#
+## Read in all annotated bed files of peaks
+#
 nice R
 library(GenomicRanges)
 path <- paste0(getwd(),"/",list.files(recursive=T)[grep("annotation.txt",list.files(recursive=T))])
@@ -19,38 +22,67 @@ mcols(reading.gr,use.names=T) <- cbind(reading[,1],reading[,8],reading[,16])
 assign(toName[i],reading)
 assign(paste0(toName[i],".gr"),reading.gr)
 }
-toSubset <- c("GSE24447_hESC_H3K27me3_peaks.gr","GSE24447_hESC_H3K4me1_peaks.gr","GSE24447_hESC_H3K4me3_peaks.gr")
-for(i in 1:3){
-subsetting <- subsetByOverlaps(get(toSubset[i]),GSE24447_hESC_H3K27ac_peaks.gr)
-assign(gsub(".gr",".ss",toSubset[i]),subsetting)
+#
+## For both hESCs and hNPCs, subset H3K27me3, H3K4me1 and H3k4me3 to those peaks that overlap with H3K27ac
+#
+toSubset <- list(c("GSE24447_hESC_H3K27me3_peaks.gr","GSE24447_hESC_H3K4me1_peaks.gr","GSE24447_hESC_H3K4me3_peaks.gr"),c("GSE24447_hNPC_H3K27me3_peaks.gr","GSE24447_hNPC_H3K4me1_peaks.gr","GSE24447_hNPC_H3K4me3_peaks.gr"))
+names(toSubset) <- c("GSE24447_hESC_H3K27ac_peaks.gr","GSE24447_hNPC_H3K27ac_peaks.gr")
+for(i in 1:length(toSubset)){
+set <- toSubset[[i]]
+h3k27ac <- get(names(toSubset)[[i]])
+for(j in 1:length(set)){
+subsetting <- subsetByOverlaps(get(set[j]),h3k27ac)
+assign(gsub(".gr",".ss",set[j]),subsetting)
 }
+}
+#
+## Create counts tables of overlapping histone modification peaks
+#
 library(ChIPpeakAnno)
 library(limma)
-res <- makeVennDiagram(Peaks=list(GSE24447_hESC_H3K27me3_peaks.ss,GSE24447_hESC_H3K4me1_peaks.ss,GSE24447_hESC_H3K4me3_peaks.ss),NameOfPeaks=c("H3K27me3", "H3K4me1","H3K4me3"))
-png("ESC_histonemods.png")
-vennDiagram(res[[2]])
+subsetted <- toSubset
+names(subsetted) <- c("hESC_H3K27ac","hNPC_H3K27ac")
+res.hist <- as.list(rep(NA,2))
+for(i in 1:length(res.hist)){
+subsetted[[i]] <- gsub(".gr",".ss",subsetted[[i]])
+res.hist[[i]] <- makeVennDiagram(Peaks=list(get(subsetted[[i]][1]),get(subsetted[[i]][2]),get(subsetted[[i]][3])),NameOfPeaks=c("H3K27me3", "H3K4me1","H3K4me3"))
+png(paste0(names(subsetted)[[i]],"_venn.png"))
+vennDiagram(res.hist[[i]][[2]])
 dev.off()
+}
+#
+## Define enhancers in both cell lines
+#
+h3k27ac <- list(array(NA,dim=c(length(GSE24447_hESC_H3K27ac_peaks.gr),3)),array(NA,dim=c(length(GSE24447_hNPC_H3K27ac_peaks.gr),3)))
+enhancers <- as.list(rep(NA,2))
+names(enhancers) <- gsub("H3K27ac","enhancers",names(subsetted))
+for(i in 1:length(h3k27ac)){
+colnames(h3k27ac[[i]]) <- subsetted[[i]]
+	for(j in 1:ncol(h3k27ac[[i]])){
+	h3k27ac[[i]][,j] <- countOverlaps(get(names(toSubset)[[i]]),get(subsetted[[i]][j]))
+	h3k27ac[[i]][which(h3k27ac[[i]][,j]>1),j] <- 1
+	}
+enh <- which(h3k27ac[[i]][,1]==0 & h3k27ac[[i]][,2]==1 & h3k27ac[[i]][,3]==0)
+enhancers[[i]] <- get(names(toSubset)[[i]])[enh]
+}
+table(mcols(enhancers[[1]])[2])
+#> table(mcols(enhancers[[1]])[2])
+#
+#        exon   Intergenic       intron promoter-TSS          TTS
+#        1253         7840        13548          373          489
+table(mcols(enhancers[[2]])[2])
+#> table(mcols(enhancers[[2]])[2])
+#
+#        exon   Intergenic       intron promoter-TSS          TTS
+#         181         2455         3691           83           96
+#
+#
 #
 ## How many enhancers overlap with Sox2 and Oct4/Sox2 and Pax6?
 #
-h3k27ac <- array(NA,dim=c(length(GSE24447_hESC_H3K27ac_peaks.gr),3))
-colnames(h3k27ac) <- toSubset
-for(i in 1:ncol(h3k27ac)){
-h3k27ac[,i] <- countOverlaps(GSE24447_hESC_H3K27ac_peaks.gr,get(toSubset[i]))
-h3k27ac[which(h3k27ac[,i]>1),i] <- 1
-}
-enhancers <- which(h3k27ac[,1]==0 & h3k27ac[,2]==1 & h3k27ac[,3]==0)
-h3k27ac.enhancers <- GSE24447_hESC_H3K27ac_peaks.gr[enhancers] #23507
-table(mcols(h3k27ac.enhancers[]))
-#
-## How many enhancers overlap with Sox2 and Oct4?
-#
-res <- makeVennDiagram(Peaks=list(h3k27ac.enhancers,GSE69479_hESC_Sox2_peaks.gr,GSE69646_hESC_Oct4_peaks.gr),NameOfPeaks=c("Enhancers","Sox2","Oct4"))
-library(limma)
-png("hESC_enhancers_Sox2_Oct4_venn.png")
-vennDiagram(res[[2]])
-dev.off()
-
+tfs <- list(c("GSE69479_hESC_Sox2_peaks.gr","GSE69646_hESC_Oct4_peaks.gr"),c("GSE69479_hNPC_Sox2_peaks.gr","Pax6.homer.gr"))
+names(tfs) <- c("hESC","hNPC")
+tfs.ext <- tfs
 extend <- function(x, upstream=0, downstream=0)     
 {
     if (any(strand(x) == "*"))
@@ -61,19 +93,40 @@ extend <- function(x, upstream=0, downstream=0)
     ranges(x) <- IRanges(new_start, new_end)
     trim(x)
 }
-
-toExtend <- c("GSE69479_hESC_Sox2_peaks.gr","GSE69646_hESC_Oct4_peaks.gr")
-for(i in 1:length(extend)){
-gr <- get(toExtend[i])
-extended.gr <- extend(gr,100,100)
-assign(paste0(toExtend[i],".wide"),extended.gr)
+for(i in 1:length(tfs)){
+tfs.ext[[i]] <- gsub(".gr",".gr.wide",tfs[[i]])
+	for(j in 1:length(tfs[[i]])){
+	gr <- get(tfs[[i]][j])
+	extended.gr <- extend(gr,100,100)
+	assign(paste0(tfs[[i]][j],".wide"),extended.gr)
+	}
 }
-res <- makeVennDiagram(Peaks=list(h3k27ac.enhancers,GSE69479_hESC_Sox2_peaks.gr.wide,GSE69646_hESC_Oct4_peaks.gr.wide),NameOfPeaks=c("Enhancers","Sox2","Oct4"))
-png("hESC_enhancers_Sox2_Oct4_wide_venn.png")
-vennDiagram(res[[2]])
+res.enh <- as.list(rep(NA,2))
+names(res.enh) <- c("hESC_enhancers_Sox2_Oct4","hNPC_enhancers_Sox2_Pax6")
+for(i in 1:length(res.enh)){
+res.enh[[i]] <- makeVennDiagram(Peaks=list(enhancers[[i]],get(tfs.ext[[i]][1]),get(tfs.ext[[i]][2])),NameOfPeaks=c("Enhancers",tfs[[i]]))
+png(paste0(names(enhancers)[[i]],"_tfs_venn.png"))
+vennDiagram(res.enh[[i]][[2]])
 dev.off()
+}
+#
+## Define enhancers that overlap TFs in both cell lines
+#
+enhancers.tf <- list(array(NA,dim=c(length(enhancers[[1]]),2)),array(NA,dim=c(length(enhancers[[2]]),2)))
+names(enhancers.tf) <- names(res.enh)
+geneLists <- as.list(rep(NA,2))
+names(geneLists) <- names(res.enh)
+for(i in 1:length(enhancers.tf)){
+colnames(enhancers.tf[[i]]) <- tfs.ext[[i]]
+	for(j in 1:ncol(enhancers.tf[[i]])){
+	enhancers.tf[[i]][,j] <- countOverlaps(enhancers[[i]],get(tfs.ext[[i]][j]))
+	enhancers.tf[[i]][which(enhancers.tf[[i]][,j]>1),j] <- 1
+	}
+enh <- which(enhancers.tf[[i]][,1]==1 & enhancers.tf[[i]][,2]==1)
+geneLists[[i]] <- enhancers[[i]][enh]
+}
 
-nice R
+
 setwd("/data/emmabell42/seq/Shuchen/coverage")
 hesc.cov <- read.table("20170126_hESC_enhancers",sep="\t",head=T,row.names=1)
 hnpc.cov <- read.table("20170126_hNPC_enhancers",sep="\t",head=T,row.names=1)
@@ -92,8 +145,8 @@ cov <- get(toCalc[i])
 	cat(i,"Calculating means for row",j,"\n",sep=" ")
 	  for(k in 1:ncol(aveCov[[i]])){
 		#cat("Calculating mean of",tags[k],"\n",sep=" ")
-		lastCol <- k*161
-		firstCol <- lastCol-160
+		lastCol <- k*41
+		firstCol <- lastCol-40
 		aveCov[[i]][j,k] <- mean(as.numeric(cov[j,firstCol:lastCol]))
 		}
 	}
@@ -111,3 +164,9 @@ dendro <- hclust(as.dist(1-cm))
 png("hESC_enhancers.png")
 heatmap.2(,Rowv=as.dendrogram(dendro),Colv=as.dendrogram(dendro),trace="none",col=bluered(100),mar=c(15,15))
 dev.off()
+
+#
+## Which enhancers overlap with Sox2-Oct4 and Sox2-Pax6? 
+#
+
+	
