@@ -124,7 +124,26 @@ colnames(enhancers.tf[[i]]) <- tfs.ext[[i]]
 	}
 enh <- which(enhancers.tf[[i]][,1]==1 & enhancers.tf[[i]][,2]==1)
 geneLists[[i]] <- enhancers[[i]][enh]
+df <- data.frame(chr=seqnames(geneLists[[i]]),start=start(geneLists[[i]])-1,end=end(geneLists[[i]]),names=mcols(geneLists[[i]])[1],locations=mcols(geneLists[[i]])[2],gene=mcols(geneLists[[i]])[3])
+assign(names(geneLists)[[i]],df)
+write.table(df,paste0(names(geneLists)[[i]],".txt"),sep="\t",row.names=F,col.names=F,quote=F)
 }
+#> table(mcols(geneLists[[1]])[2])
+#
+#        exon   Intergenic       intron promoter-TSS          TTS
+#          33          875          805           13           21
+#> table(mcols(geneLists[[2]])[2])
+#
+#        exon   Intergenic       intron promoter-TSS          TTS
+#          20          449          524            7            5
+
+hESC.enh.sox2.oct4 <- data.frame(seqnames=seqnames(gr),
+  starts=start(gr)-1,
+  ends=end(gr),
+  names=c(rep(".", length(gr))),
+  scores=c(rep(".", length(gr))),
+  strands=strand(gr))
+
 
 
 setwd("/data/emmabell42/seq/Shuchen/coverage")
