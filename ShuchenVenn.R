@@ -136,16 +136,34 @@ write.table(df,paste0(names(geneLists)[[i]],".txt"),sep="\t",row.names=F,col.nam
 #
 #        exon   Intergenic       intron promoter-TSS          TTS
 #          20          449          524            7            5
-
-hESC.enh.sox2.oct4 <- data.frame(seqnames=seqnames(gr),
-  starts=start(gr)-1,
-  ends=end(gr),
-  names=c(rep(".", length(gr))),
-  scores=c(rep(".", length(gr))),
-  strands=strand(gr))
-
-
-
+#
+## All hESC Sox2/Oct4 and Sox2/Pax6 overlaps
+#
+res.tf <- as.list(rep(NA,2))
+names(res.tf) <- c("hESC_Sox2_Oct4","hNPC_Sox2_Pax6")
+for(i in 1:length(res.tf)){
+res.tf[[i]] <- makeVennDiagram(Peaks=list(get(tfs.ext[[i]][1]),get(tfs.ext[[i]][2])),NameOfPeaks=c(tfs.ext[[i]]))
+png(paste0(names(res.tf)[[i]],"_venn.png"))
+vennDiagram(res.tf[[i]][[2]])
+dev.off()
+}
+tf.overlaps <- list(rep(NA,length(get(tfs.ext[[1]][1]))),rep(NA,length(get(tfs.ext[[2]][1]))))
+names(tf.overlaps) <- names(res.tf)
+geneLists <- as.list(rep(NA,2))
+names(geneLists) <- names(res.tf)
+for(i in 1:length(tf.overlaps)){
+tf.overlaps[[i]] <- countOverlaps(get(tfs.ext[[i]][1]),get(tfs.ext[[i]][2]))
+tf.overlaps[[i]][which(tf.overlaps[[i]]>1)] <- 1
+geneLists[[i]] <- get(tfs.ext[[i]][1])[which(tf.overlaps[[i]]==1)]
+df <- data.frame(chr=seqnames(geneLists[[i]]),start=start(geneLists[[i]])-1,end=end(geneLists[[i]]),names=mcols(geneLists[[i]])[1],locations=mcols(geneLists[[i]])[2],gene=mcols(geneLists[[i]])[3])
+assign(names(geneLists)[[i]],df)
+write.table(df,paste0(names(geneLists)[[i]],".txt"),sep="\t",row.names=F,col.names=F,quote=F)
+}
+####################################
+#
+## Heatmaps
+#
+####################################
 setwd("/data/emmabell42/seq/Shuchen/coverage")
 hesc.cov <- read.table("20170126_hESC_enhancers",sep="\t",head=T,row.names=1)
 hnpc.cov <- read.table("20170126_hNPC_enhancers",sep="\t",head=T,row.names=1)
@@ -173,10 +191,15 @@ cov <- get(toCalc[i])
 
 library(gplots)
 cm <- as.list(rep(NA,2))
+names(cm) <- c("hESC_enhancers","hNPC_enhancers")
 dendro <- as.list(rep(NA,2))
+toSelect <- list("hESC",c("hNPC","Pax6"))
 for(i in 1:(length(cm))){
-cm[[i]] <- cor(aveCov[[i]],use="pairwise.complete.obs")
+cm[[i]] <- cor(aveCov[[i]][,grep(paste0(toSelect[[i]],collapse="|"),colnames(aveCov[[i]]))],use="pairwise.complete.obs",method="spearman")
 dendro[[i]] <- hclust(as.dist(1-cm[[i]]))
+png(paste0(names(cm)[i],"_heatmap.png"))
+heatmap.2(cm[[i]],Rowv=as.dendrogram(dendro[[i]]),Colv=as.dendrogram(dendro[[i]]),trace="none",col=bluered(100),mar=c(15,15))
+dev.off()
 }
 
 dendro <- hclust(as.dist(1-cm))
