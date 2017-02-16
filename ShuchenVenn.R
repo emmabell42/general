@@ -208,7 +208,11 @@ heatmap.2(,Rowv=as.dendrogram(dendro),Colv=as.dendrogram(dendro),trace="none",co
 dev.off()
 
 #
-## Which enhancers overlap with Sox2-Oct4 and Sox2-Pax6? 
+## Motif analysis at hESC Sox2-Oct4 and hNPC Sox2-Pax6
 #
-
-	
+PATH=$PATH:/data/seqtools/homer/bin/
+PATH=$PATH:/data/seqtools/weblogo/
+/data/seqtools/homer/bin/findMotifsGenome.pl hESC_Sox2_Oct4.txt hg19 MotifEnrichment_hESC_Sox2_Oct4 -preparsedDir ../../resources/HOMER
+/data/seqtools/homer/bin/findMotifsGenome.pl hNPC_Sox2_Pax6.txt hg19 MotifEnrichment_hNPC_Sox2_Pax6 -preparsedDir ../../resources/HOMER
+/data/seqtools/homer/bin/findMotifsGenome.pl hESC_Sox2_Oct4.txt hg19 MotifEnrichment_hESC_Sox2_Oct4_vs_hNPC -bg hNPC_Sox2_Pax6.txt
+/data/seqtools/homer/bin/findMotifsGenome.pl hNPC_Sox2_Pax6.txt hg19 MotifEnrichment_hNPC_Sox2_Pax6_vs_hESC -bg hESC_Sox2_Oct4.txt
