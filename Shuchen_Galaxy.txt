@@ -1,0 +1,86 @@
+########################################
+#
+## Coverage heatmaps using DeepTools
+#
+########################################
+#
+## Create a bed file +/- 5 kb around hESC and hNPC Sox2 ChIP-seq peaks
+#
+nice R
+toRead <- list.files("MACS2")[grep("_Sox2_peaks.narrowPeak",list.files("MACS2"))][c(2,4,6)]
+for(i in 1:length(toRead)){
+path <- paste0("MACS2/",toRead[i])
+toWrite <- gsub(".narrowPeak","_ext.bed",toRead[i])
+reading <- read.table(path,sep="\t",stringsAsFactors=F)
+extending <- reading[,1:3]
+extending[,2] <- extending[,2]-5000
+extending[,3] <- extending[,3]+5000
+write.table(extending,toWrite,sep="\t",col.names=F,row.names=F,quote=F)
+}
+q()
+n
+#
+## Merge and sort bam files
+#
+cd bam
+echo "GSE21916_hESC_Oct4.bam,SRR049933.bam SRR049934.bam SRR049935.bam
+GSE69646_hESC_Oct4.bam,SRR2056023.bam SRR2056024.bam
+GSE69646_hESC_H3K27ac.bam,SRR2056016.bam SRR2056017.bam
+GSE62193_hESC_H3K27ac.bam,SRR1608982.bam SRR1608987.bam
+GSE62193_hESC_H3K4me3.bam,SRR1608985.bam SRR1608990.bam
+GSE62193_hNPC_H3K27ac.bam,SRR1608991.bam SRR1608996.bam
+GSE62193_hNPC_H3K4me3.bam,SRR1608994.bam SRR1608999.bam" > toMerge
+while read LINE;
+do
+toName=`echo $LINE | cut -f 1 -d ","`
+toMerge=`echo $LINE | cut -f 2 -d ","`
+samtools merge $toName $toMerge
+samtools sort -o $toName -T tmp -@ 12 $toName
+done < toMerge
+#
+## Rename and sort bam files without replicates
+#
+nice R
+fastqs <- list.files("fastq.trimmed")[grep("SRR",list.files("fastq.trimmed"))]
+fastqs <- sapply(strsplit(fastqs, "\\."),"[",1)
+fastqs <- unique(fastqs)
+bams <- list.files("bam")[grep("bam",list.files("bam"))]
+bams <- bams[grep("SRR",bams)]
+bams <- sapply(strsplit(bams, "\\."),"[",1)
+bams <- unique(bams)
+write.table(fastqs[which(!fastqs %in% bams)],"toAlign",sep="\n",row.names=F,col.names=F,quote=F)
+q()
+n
+export BOWTIE2_INDEXES=/data/seqtools/genomes/hg19/
+while read LINE; 
+do 
+/data/seqtools/bowtie2-2.2.3/bowtie2 -x hg19 -U $LINE.trimmed.fastq 1> $LINE.sam -p 12;
+samtools view -bS $LINE.sam > $LINE.bam;
+done < toAlign
+
+cd ../fastq.trimmed/
+echo "GSE69479_hESC_Sox2.bam,SRR2049332.bam,SRR2049334.bam SRR2049335.bam
+GSE49404_hNPC_Sox2.bam,SRR945976.bam,SRR945975.bam
+GSE69479_hNPC_Sox2.bam,SRR2049336.bam,SRR2049338.bam
+GSE24447_hESC_H3K27ac.bam,SRR067373.bam,SRR067371.bam
+GSE24447_hESC_H3K27me3.bam,SRR067372.bam,SRR067371.bam
+GSE24447_hESC_H3K4me1.bam,SRR067374.bam,SRR067371.bam
+GSE24447_hESC_H3K4me3.bam,SRR067375.bam,SRR067371.bam
+GSE24447_hNPC_H3K27ac.bam,SRR067381.bam,SRR067379.bam
+GSE24447_hNPC_H3K27me3.bam,SRR067380.bam,SRR067379.bam
+GSE24447_hNPC_H3K4me1.bam,SRR067382.bam,SRR067379.bam
+GSE24447_hNPC_H3K4me3.bam,SRR067383.bam,SRR067379.bam" > toRename
+cd bam
+while read LINE;
+do
+toName=`echo $LINE | cut -f 1 -d ","`
+theBam=`echo $LINE | cut -f 2 -d ","`
+mv $theBam $toName 
+samtools sort -o $toName -T tmp -@ 12 $toName
+done < toRename
+#
+## Subset bam files by bed files
+#
+find . -name 
+bedtools intersect -abam -b GSE49404_hNPC_Sox2_peaks_ext.bed, 
+GSE69479_hESC_Sox2_peaks_ext.bed, GSE69479_hNPC_Sox2_peaks_ext.bed
