@@ -8,13 +8,29 @@
 #
 nice R
 toRead <- list.files("MACS2")[grep("_Sox2_peaks.narrowPeak",list.files("MACS2"))][c(2,4,6)]
+sizes <- read.table("/data/emmabell42/resources/hg19.chrom.sizes.txt",stringsAsFactors=F,sep="\t")
+sizes <- sizes[order(sizes[,1]),]
+sizes[grep("_",sizes[,1]),1] <- NA
+sizes <- na.omit(sizes)
+longer <- as.list(rep(NA,nrow(sizes)))
 for(i in 1:length(toRead)){
 path <- paste0("MACS2/",toRead[i])
 toWrite <- gsub(".narrowPeak","_ext.bed",toRead[i])
 reading <- read.table(path,sep="\t",stringsAsFactors=F)
+reading[grep("_",reading[,1]),1] <- NA
+reading <- na.omit(reading)
 extending <- reading[,1:3]
 extending[,2] <- extending[,2]-5000
 extending[,3] <- extending[,3]+5000
+extending[which(extending[,2]<1),2] <- 1
+#	for(j in 1:nrow(sizes)){
+#	chr <- sizes[j,1]
+#	end <- sizes[j,3]	
+#	chr.subset <- extending[which(extending[,1]==sizes[j,1]),]
+#	longer[[j]] <- ifelse(length(which(chr.subset[,3]>end))>0,which(chr.subset[,3]>end),0)
+#	chr.subset[j,3] <- end
+#	extending[which(extending[,1]==sizes[j,1]),] <- chr.subset
+#	}
 write.table(extending,toWrite,sep="\t",col.names=F,row.names=F,quote=F)
 }
 q()
@@ -81,6 +97,11 @@ done < toRename
 #
 ## Subset bam files by bed files
 #
-find . -name 
-bedtools intersect -abam -b GSE49404_hNPC_Sox2_peaks_ext.bed, 
-GSE69479_hESC_Sox2_peaks_ext.bed, GSE69479_hNPC_Sox2_peaks_ext.bed
+find ./bam.merged/ *.bam | while read filename; 
+do
+bedtools intersect -abam $filename -b GSE49404_hNPC_Sox2_peaks_ext.bed GSE69479_hESC_Sox2_peaks_ext.bed GSE69479_hNPC_Sox2_peaks_ext.bed > $filename.subset
+done;
+find ./Pax6_chip_dataset/ *_hg38.bed | while read filename; 
+do
+bedtools intersect -a $filename -b GSE49404_hNPC_Sox2_peaks_ext.bed GSE69479_hESC_Sox2_peaks_ext.bed GSE69479_hNPC_Sox2_peaks_ext.bed > $filename.subset
+done;
