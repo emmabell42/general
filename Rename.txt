@@ -1,0 +1,7 @@
+##############################
+#
+## Rename use example
+#
+##############################
+#
+rename .bam.subset '.subset.bam' *.bam.subset
