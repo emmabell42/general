@@ -46,9 +46,9 @@ res.hist <- as.list(rep(NA,2))
 for(i in 1:length(res.hist)){
 subsetted[[i]] <- gsub(".gr",".ss",subsetted[[i]])
 res.hist[[i]] <- makeVennDiagram(Peaks=list(get(subsetted[[i]][1]),get(subsetted[[i]][2]),get(subsetted[[i]][3])),NameOfPeaks=c("H3K27me3", "H3K4me1","H3K4me3"))
-png(paste0(names(subsetted)[[i]],"_venn.png"))
-vennDiagram(res.hist[[i]][[2]])
-dev.off()
+#png(paste0(names(subsetted)[[i]],"_venn.png"))
+#vennDiagram(res.hist[[i]][[2]])
+#dev.off()
 }
 #
 ## Define enhancers in both cell lines
@@ -143,9 +143,9 @@ res.tf <- as.list(rep(NA,2))
 names(res.tf) <- c("hESC_Sox2_Oct4","hNPC_Sox2_Pax6")
 for(i in 1:length(res.tf)){
 res.tf[[i]] <- makeVennDiagram(Peaks=list(get(tfs.ext[[i]][1]),get(tfs.ext[[i]][2])),NameOfPeaks=c(tfs.ext[[i]]))
-png(paste0(names(res.tf)[[i]],"_venn.png"))
-vennDiagram(res.tf[[i]][[2]])
-dev.off()
+#png(paste0(names(res.tf)[[i]],"_venn.png"))
+#vennDiagram(res.tf[[i]][[2]])
+#dev.off()
 }
 tf.overlaps <- list(rep(NA,length(get(tfs.ext[[1]][1]))),rep(NA,length(get(tfs.ext[[2]][1]))))
 names(tf.overlaps) <- names(res.tf)
@@ -157,8 +157,20 @@ tf.overlaps[[i]][which(tf.overlaps[[i]]>1)] <- 1
 geneLists[[i]] <- get(tfs.ext[[i]][1])[which(tf.overlaps[[i]]==1)]
 df <- data.frame(chr=seqnames(geneLists[[i]]),start=start(geneLists[[i]])-1,end=end(geneLists[[i]]),names=mcols(geneLists[[i]])[1],locations=mcols(geneLists[[i]])[2],gene=mcols(geneLists[[i]])[3])
 assign(names(geneLists)[[i]],df)
-write.table(df,paste0(names(geneLists)[[i]],".txt"),sep="\t",row.names=F,col.names=F,quote=F)
+#write.table(df,paste0(names(geneLists)[[i]],".txt"),sep="\t",row.names=F,col.names=F,quote=F)
 }
+##############################
+#
+## How many hESC Sox2-Oct4 co-bound regions overlap with hNPC Sox2 and hNPC Pax6?
+#
+##############################
+library(VennDiagram)
+res1 <- makeVennDiagram(Peaks=list(geneLists[[i]],GSE69479_hNPC_Sox2_peaks.gr.wide,Pax6.homer.gr.wide),NameOfPeaks=c("hESC Sox2-Oct4","hNPC Sox2","hNPC Pax6"))
+png("venn_hESC_Sox2_Oct4_hNPC_Sox2_Pax6.png")
+vennDiagram(res[[2]])
+dev.off()
+res <- makeVennDiagram(Peaks=list(GSE69479_hESC_Sox2_peaks.gr.wide,GSE69646_hESC_Oct4_peaks.gr.wide,GSE69479_hNPC_Sox2_peaks.gr.wide,Pax6.homer.gr.wide),NameOfPeaks=c("hESC Sox2","hESC Oct4","hNPC Sox2","hNPC Pax6"))
+
 ####################################
 #
 ## Heatmaps
