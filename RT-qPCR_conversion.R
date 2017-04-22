@@ -44,9 +44,9 @@ boxplot(LogFC~Day,data=logfcs.se[which(logfcs.se$Media=="2i"),],las=2,col="light
 axis(1, at=c(1,2,3,4,5), labels=c(1,2,3,7,"cEpiSC"),tick=FALSE, las=1, cex.axis=1)
 axis(2, at=axTicks(2), cex.axis=0.9, las=2)
 
-bp <- boxplot(LogFC~Day,data=logfcs.se[which(logfcs.se$Media=="Serum"),],las=2,col="lightgrey",names.arg=NULL,xaxt = 'n',yaxt = 'n',xlab="Days",ylab="Log(FC)")
+bp <- boxplot(LogFC~Day,data=logfcs.se[which(logfcs.se$Media=="Serum"),],las=2,col="darkgrey",names.arg=NULL,xaxt = 'n',yaxt = 'n',xlab="Days",ylab="Log(FC)")
 grid(nx=NA,ny=NULL)
-boxplot(LogFC~Day,data=logfcs.se[which(logfcs.se$Media=="Serum"),],las=2,col="lightgrey",main="Serum",names.arg=NULL,xaxt = 'n',yaxt = 'n',xlab="Days",ylab="Log(FC)",add=T)
+boxplot(LogFC~Day,data=logfcs.se[which(logfcs.se$Media=="Serum"),],las=2,col="darkgrey",main="Serum",names.arg=NULL,xaxt = 'n',yaxt = 'n',xlab="Days",ylab="Log(FC)",add=T)
 axis(1, at=c(1,2,3,4,5), labels=c(1,2,3,7,"cEpiSC"),tick=FALSE, las=1, cex.axis=1)
 axis(2, at=axTicks(2), cex.axis=0.9, las=2)
 
