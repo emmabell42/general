@@ -64,20 +64,31 @@ axis(1, at=c(1.5,3.5,5.5,7.5,9.5), labels=c(1,2,3,7,"cEpiSC"),tick=FALSE, las=1,
 axis(2, at=axTicks(2), cex.axis=0.9, las=2)
 abline(v=c(2.5,4.5,6.5,8.5),lty=3,col="lightgrey")
 
-twoi <- matrix(logfcs.se[which(logfcs.se$Media=="2i"),1],ncol=5)
-rownames(twoi) <- logfcs.se$Gene[1:18]
-twoi <- cbind(0,twoi)
+#twoi <- matrix(logfcs.se[which(logfcs.se$Media=="2i"),1],ncol=5)
+twoi <- t(relexp[which(relexp[,2]=="2i"),5:28])
 colnames(twoi) <- c(0,1,2,3,7,"cEpiSC")
-twoi <- 2^twoi
+#twoi <- 2^twoi
 cm <- cor(t(twoi))
 dendro <- hclust(as.dist(1-cm))
-heatmap.2(twoi,scale="row",Colv=NULL,trace="none",col=bluered(100),Rowv=as.dendrogram(dendro),RowSideColors=as.character(logfcs.se[1:18,5]),mar=c(5,5))
+heatmap.2(twoi,scale="row",Colv=NULL,trace="none",col=bluered(100),Rowv=as.dendrogram(dendro),RowSideColors=as.character(setype),mar=c(7,5))
 
-serum <- matrix(logfcs.se[which(logfcs.se$Media=="Serum"),1],ncol=5)
-rownames(serum) <- logfcs.se$Gene[1:18]
-serum <- cbind(0,serum)
+#serum <- matrix(logfcs.se[which(logfcs.se$Media=="Serum"),1],ncol=5)
+serum <- t(relexp[which(relexp[,2]=="Serum"),5:28])
 colnames(serum) <- c(0,1,2,3,7,"cEpiSC")
-serum <- 2^serum
+#serum <- 2^serum
 cm <- cor(t(serum))
 dendro <- hclust(as.dist(1-cm))
-heatmap.2(serum,scale="row",Colv=NULL,trace="none",col=bluered(100),Rowv=as.dendrogram(dendro),RowSideColors=as.character(logfcs.se[1:18,5]),mar=c(7,5))
+heatmap.2(serum,scale="row",Colv=NULL,trace="none",col=bluered(100),Rowv=as.dendrogram(dendro),RowSideColors=as.character(setype),mar=c(7,5))
+
+setype <- c("grey","grey","pink","grey","pink","lightgreen","lightgreen","grey","lightgreen","lightgreen","lightgreen","pink","lightgreen","lightgreen","lightgreen","pink","pink","pink","lightgreen","pink","pink","lightgreen","lightgreen","grey")
+
+silenced <- c("Esrrb","Tbx3","Tfcp2l1","Tet2","Klf2","Klf4","Klf5","Tdh")
+maintained <- c("Nanog","Oct4","Klf13","Med13l","Smadcard1","Tet1","Otx2","Lefty1")
+ctrl <- c("Dnmt3a","Dnmt3b","Fgf5","Ncoa3","T")
+
+twoi <- twoi[which(rownames(twoi) %in% c(silenced,maintained,ctrl)),]
+serum <- serum[which(rownames(serum) %in% c(silenced,maintained,ctrl)),]
+
+logfcs.se <- logfcs.se[which(logfcs.se$Gene %in% c(silenced,maintained,ctrl)),]
+
+setype <- c("grey","grey","pink","grey","pink","lightgreen","lightgreen","grey","lightgreen","pink","pink","lightgreen","pink","pink","lightgreen","lightgreen","grey")
