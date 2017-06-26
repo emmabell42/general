@@ -228,3 +228,57 @@ PATH=$PATH:/data/seqtools/weblogo/
 /data/seqtools/homer/bin/findMotifsGenome.pl hNPC_Sox2_Pax6.txt hg19 MotifEnrichment_hNPC_Sox2_Pax6 -preparsedDir ../../resources/HOMER
 /data/seqtools/homer/bin/findMotifsGenome.pl hESC_Sox2_Oct4.txt hg19 MotifEnrichment_hESC_Sox2_Oct4_vs_hNPC -bg hNPC_Sox2_Pax6.txt
 /data/seqtools/homer/bin/findMotifsGenome.pl hNPC_Sox2_Pax6.txt hg19 MotifEnrichment_hNPC_Sox2_Pax6_vs_hESC -bg hESC_Sox2_Oct4.txt
+
+#
+## 20170626
+#
+library(GenomicRanges)
+library(ChIPpeakAnno)
+
+# By ChIP-seq peak
+
+toRead <- list.files()
+toName <- gsub("_peaks.narrowPeak","",toRead)
+toName <- gsub("_peaks.broadPeak","",toName)
+for(i in 1:length(toRead)){
+tmp <- read.table(toRead[i],head=F,stringsAsFactors=F,comment.char="",quote="",sep="\t")
+colnames(tmp)[1:3] <- c("chr","start","end")
+tmp.gr <- with(tmp, GRanges(chr, IRanges(start=start, end=end)))
+assign(toName[i],tmp)
+assign(paste0(toName[i],".gr"),tmp.gr)
+}
+Pax6.homer.bed$chr <- gsub(" ","",Pax6.homer.bed$chr)
+Pax6.homer.bed.gr <- with(Pax6.homer.bed, GRanges(chr, IRanges(start=start, end=end)))
+gr <- paste0(toName,".gr")
+so <- subsetByOverlaps(GSE69479_hESC_Sox2.gr,GSE69646_hESC_Oct4.gr)
+sp <- subsetByOverlaps(GSE69479_hNPC_Sox2.gr,Pax6.homer.bed.gr)
+gr <- c("so","sp","GSE62193_hESC_H3K27ac.gr","GSE62193_hNPC_H3K27ac.gr")
+venn <- makeVennDiagram(peaks=list(so,sp,GSE62193_hESC_H3K27ac.gr,GSE62193_hNPC_H3K27ac.gr),NameOfPeaks=gr)
+
+# By gene
+
+toRead <- list.files()[grep("annotation",list.files())]
+toName <- gsub("_peaks_annotation.txt",".annot",toRead)
+genes <- c()
+for(i in 1:length(toRead)){
+tmp <- read.table(toRead[i],head=T,stringsAsFactors=F,comment.char="",quote="",sep="\t")
+genes <- c(genes,tmp$Gene.Name)
+tmp.gr <- with(tmp, GRanges(Chr, IRanges(start=Start, end=End),mcols=Gene.Name))
+assign(toName[i],tmp)
+assign(paste0(toName[i],".gr"),tmp.gr)
+}
+genes <- unique(genes)
+genes <- sort(genes)
+genes <- genes[2:length(genes)]
+venn.genes <- array(NA,dim=c(length(genes),4))
+rownames(venn.genes) <- genes 
+colnames(venn.genes) <- gr
+so <- subsetByOverlaps(GSE69479_hESC_Sox2.annot.gr,GSE69646_hESC_Oct4.annot.gr)
+sp <- subsetByOverlaps(GSE69479_hNPC_Sox2.annot.gr,Pax6.homer_annotation.txt.gr)
+gr <- c("so","sp","GSE62193_hESC_H3K27ac.annot.gr","GSE62193_hNPC_H3K27ac.annot.gr")
+for(i in 1:4){
+regs <- get(gr[i])
+venn.genes[,i] <- as.numeric(rownames(venn.genes) %in% mcols(regs)$mcols)
+}
+tmp <- rowSums(venn.genes)
+venn.genes <- venn.genes[which(tmp>0),]
